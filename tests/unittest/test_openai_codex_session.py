@@ -47,6 +47,15 @@ def test_parse_openai_codex_authorization_input_supports_callback_url():
     assert parsed["state"] == "xyz987"
 
 
+def test_parse_openai_codex_authorization_input_supports_fragment_query():
+    parsed = parse_openai_codex_authorization_input(
+        "http://localhost:1455/auth/callback#code=abc123&state=xyz987"
+    )
+
+    assert parsed["code"] == "abc123"
+    assert parsed["state"] == "xyz987"
+
+
 def test_extract_text_from_openai_codex_response():
     response = {
         "output": [
