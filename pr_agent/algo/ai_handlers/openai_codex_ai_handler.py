@@ -47,4 +47,4 @@ class OpenAICodexHandler(BaseAiHandler):
             raise
         except Exception as e:
             get_logger().warning(f"Error during ChatGPT OAuth inference: {e}")
-            raise openai.APIError from e
+            raise openai.APIError(f"ChatGPT OAuth inference failed: {e}") from e
