@@ -43,6 +43,7 @@ include = [
 
 [project.scripts]
 pr-agent = "pr_agent.cli:run"
+pr-agent-chatgpt-auth = "pr_agent.openai_codex_cli:main"
 
 [tool.ruff]
 line-length = 120
