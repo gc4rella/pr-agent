@@ -5,6 +5,8 @@
 .venv/
 venv/
 pr_agent/settings/.secrets.toml
+pr_agent/settings_prod/.secrets.toml
+pr_agent/settings_prod/.secrets_openai_codex.toml
 __pycache__
 dist/
 *.egg-info/
