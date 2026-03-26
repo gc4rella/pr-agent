@@ -39,6 +39,7 @@ global_settings = Dynaconf(
         "settings/pr_help_docs_headings_prompts.toml",
         "settings/.secrets.toml",
         "settings_prod/.secrets.toml",
+        "settings_prod/.secrets_openai_codex.toml",
     ]],
     **dynconf_kwargs
 )
