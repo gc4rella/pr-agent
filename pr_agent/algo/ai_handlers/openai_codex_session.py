@@ -237,8 +237,12 @@ def parse_openai_codex_authorization_input(value: str) -> dict[str, str]:
         pass
 
     if "#" in raw_value:
-        code, state = raw_value.split("#", 1)
-        return {"code": code, "state": state}
+        fragment = raw_value.split("#", 1)[1]
+        fragment_query = parse_qs(fragment)
+        return {
+            "code": fragment_query.get("code", [None])[0] or "",
+            "state": fragment_query.get("state", [None])[0] or "",
+        }
 
     if "code=" in raw_value:
         query = parse_qs(raw_value)
@@ -303,7 +307,7 @@ async def complete_openai_codex_oauth(user_input: str) -> OpenAICodexCredentials
     state = parsed_input.get("state")
     if not code:
         raise ValueError("Missing authorization code from OpenAI Codex callback.")
-    if state and state != pending_state:
+    if state != pending_state:
         clear_pending_openai_codex_oauth()
         raise ValueError("OpenAI Codex sign-in state mismatch.")
 
@@ -342,7 +346,12 @@ async def ensure_fresh_openai_codex_credentials() -> OpenAICodexCredentials | No
         return credentials
 
     get_logger().info("Refreshing ChatGPT OAuth session for PR-Agent")
-    return await refresh_openai_codex_credentials(credentials.refresh_token)
+    try:
+        return await refresh_openai_codex_credentials(credentials.refresh_token)
+    except Exception as e:
+        get_logger().warning(f"Failed to refresh ChatGPT OAuth session: {e}")
+        clear_openai_codex_credentials()
+        return None
 
 
 def resolve_openai_codex_responses_url() -> str:
@@ -447,7 +456,7 @@ async def collect_openai_codex_text(response: aiohttp.ClientResponse) -> tuple[s
     final_response = None
 
     async for chunk in response.content.iter_chunked(4096):
-        buffer += chunk.decode("utf-8", errors="ignore")
+        buffer += chunk.decode("utf-8", errors="ignore").replace("\r\n", "\n")
         boundary = buffer.find("\n\n")
         while boundary != -1:
             raw_event = buffer[:boundary]
@@ -498,7 +507,13 @@ async def request_openai_codex_text(
     async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=_get_setting("TIMEOUT", 120))) as session:
         async with session.post(resolve_openai_codex_responses_url(), headers=headers, json=body) as response:
             if response.status == 401 and allow_refresh_retry:
-                refreshed = await refresh_openai_codex_credentials(credentials.refresh_token)
+                try:
+                    refreshed = await refresh_openai_codex_credentials(credentials.refresh_token)
+                except Exception:
+                    clear_openai_codex_credentials()
+                    raise ValueError(
+                        "ChatGPT OAuth session expired and could not be refreshed. Run `pr-agent-chatgpt-auth login` again."
+                    )
                 return await request_openai_codex_text(refreshed, body, allow_refresh_retry=False)
 
             if response.status >= 400:
