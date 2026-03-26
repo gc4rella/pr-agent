@@ -33,6 +33,34 @@ OPENAI__API_BASE=https://api.openai.com/v1
 OPENAI__KEY=sk-...
 ```
 
+### ChatGPT subscription via OAuth
+
+If you want to reuse a ChatGPT Plus or Pro subscription instead of a platform API key, switch PR-Agent to the dedicated OAuth-backed handler:
+
+```toml
+[config]
+ai_handler = "openai_codex"
+model = "gpt-5.4"
+fallback_models = ["gpt-5.4-mini"]
+```
+
+Then authenticate locally:
+
+```bash
+pr-agent-chatgpt-auth login
+```
+
+The helper opens a manual OAuth flow, stores the resulting access and refresh tokens in `pr_agent/settings_prod/.secrets_openai_codex.toml`, and refreshes the session automatically when needed.
+
+Useful commands:
+
+```bash
+pr-agent-chatgpt-auth status
+pr-agent-chatgpt-auth logout
+```
+
+Optional static overrides such as `client_id`, `redirect_uri`, or `base_url` can be set under `[openai_codex]` in `.secrets.toml`, but the managed session file should be left to the auth helper.
+
 ### OpenAI Flex Processing
 
 To reduce costs for non-urgent/background tasks, enable Flex Processing:
