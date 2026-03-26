@@ -143,7 +143,10 @@ class TokenHandler:
         """
         model_name = get_settings().config.model.lower()
         
-        if ModelTypeValidator.is_openai_model(model_name) and get_settings(use_context=False).get('openai.key'):
+        if ModelTypeValidator.is_openai_model(model_name) and (
+            get_settings(use_context=False).get('openai.key')
+            or get_settings(use_context=False).get('openai_codex.access_token')
+        ):
             return default_estimate
 
         if ModelTypeValidator.is_anthropic_model(model_name) and get_settings(use_context=False).get('anthropic.key'):

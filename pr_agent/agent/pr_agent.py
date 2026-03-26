@@ -3,6 +3,7 @@ from functools import partial
 
 from pr_agent.algo.ai_handlers.base_ai_handler import BaseAiHandler
 from pr_agent.algo.ai_handlers.litellm_ai_handler import LiteLLMAIHandler
+from pr_agent.algo.ai_handlers.openai_codex_ai_handler import OpenAICodexHandler
 from pr_agent.algo.cli_args import CliArgs
 from pr_agent.algo.utils import update_settings_from_args
 from pr_agent.config_loader import get_settings
@@ -50,6 +51,15 @@ commands = list(command2class.keys())
 class PRAgent:
     def __init__(self, ai_handler: partial[BaseAiHandler,] = LiteLLMAIHandler):
         self.ai_handler = ai_handler  # will be initialized in run_action
+
+    def _resolve_ai_handler(self):
+        if self.ai_handler is not LiteLLMAIHandler:
+            return self.ai_handler
+
+        handler_name = str(get_settings().get("CONFIG.AI_HANDLER", "litellm")).lower()
+        if handler_name == "openai_codex":
+            return OpenAICodexHandler
+        return LiteLLMAIHandler
 
     async def _handle_request(self, pr_url, request, notify=None) -> bool:
         # First, apply repo specific settings if exists
@@ -101,19 +111,20 @@ class PRAgent:
         if action not in command2class:
             get_logger().warning(f"Unknown command: {action}")
             return False
+        selected_ai_handler = self._resolve_ai_handler()
         with get_logger().contextualize(command=action, pr_url=pr_url):
             get_logger().info("PR-Agent request handler started", analytics=True)
             if action == "answer":
                 if notify:
                     notify()
-                await PRReviewer(pr_url, is_answer=True, args=args, ai_handler=self.ai_handler).run()
+                await PRReviewer(pr_url, is_answer=True, args=args, ai_handler=selected_ai_handler).run()
             elif action == "auto_review":
-                await PRReviewer(pr_url, is_auto=True, args=args, ai_handler=self.ai_handler).run()
+                await PRReviewer(pr_url, is_auto=True, args=args, ai_handler=selected_ai_handler).run()
             elif action in command2class:
                 if notify:
                     notify()
 
-                await command2class[action](pr_url, ai_handler=self.ai_handler, args=args).run()
+                await command2class[action](pr_url, ai_handler=selected_ai_handler, args=args).run()
             else:
                 return False
             return True

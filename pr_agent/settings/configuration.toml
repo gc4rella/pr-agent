@@ -38,6 +38,7 @@ max_extra_lines_before_dynamic_context = 10 # will try to include up to 10 extra
 patch_extra_lines_before = 5 # Number of extra lines (+3 default ones) to include before each hunk in the patch
 patch_extra_lines_after = 1 # Number of extra lines (+3 default ones) to include after each hunk in the patch
 secret_provider="" # "" (disabled), "google_cloud_storage", or "aws_secrets_manager" for secure secret management
+ai_handler="litellm" # "litellm" (default) or "openai_codex" to use a ChatGPT subscription through OAuth
 cli_mode=false
 output_relevant_configurations=false
 large_patch_policy = "clip" # "clip", "skip"
